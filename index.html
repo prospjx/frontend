@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Course Scheduler</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar glass-panel">
+            <div class="logo">
+                <div class="logo-icon"></div>
+                <h1>Smart Scheduler</h1>
+            </div>
+            
+            <div class="section-title">Available Courses</div>
+            <div id="course-list" class="course-list">
+                <!-- Courses will be dynamically injected here -->
+            </div>
+
+            <button id="generate-btn" class="primary-btn" disabled>Generate Schedule</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h2>Your Weekly Schedule</h2>
+                <div class="user-profile">
+                    <span id="student-name">Loading...</span>
+                </div>
+            </header>
+
+            <div class="schedule-container glass-panel">
+                <div class="calendar-grid" id="calendar-grid">
+                    <!-- Calendar will be dynamically injected here -->
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Panel (AI Insights) -->
+        <aside class="ai-panel glass-panel">
+            <div class="section-title">
+                <span class="sparkle">✨</span> AI Insights
+            </div>
+            <div id="ai-insights-content" class="insights-content">
+                <div class="empty-state">Generate a schedule to see AI insights.</div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
