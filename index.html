@@ -3,11 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Course Scheduler</title>
+    <title>Smart Course & Life Scheduler</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
+    <!-- Login Modal / Screen -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card glass-panel">
+            <div class="logo" style="justify-content: center; margin-bottom: 20px;">
+                <div class="logo-icon"></div>
+                <h1>Smart Scheduler Login</h1>
+            </div>
+            <p class="login-subtitle">Sign in with credentials (admin / admin)</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-input" placeholder="admin" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-input" placeholder="admin" required autocomplete="current-password">
+                </div>
+                <div id="login-error" class="login-error"></div>
+                <button type="submit" class="primary-btn" style="width: 100%;">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Student Preferences Modal -->
+    <div id="pref-modal" class="modal-overlay hidden">
+        <div class="modal-card glass-panel">
+            <div class="modal-header">
+                <h2>Student Life & Schedule Preferences</h2>
+                <button id="close-pref-btn" class="close-btn">&times;</button>
+            </div>
+            <form id="pref-form">
+                <div class="form-group">
+                    <label for="pref-name">Student Name</label>
+                    <input type="text" id="pref-name" class="form-input" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="pref-wake-time">⏰ Wake-Up Time</label>
+                        <input type="time" id="pref-wake-time" class="form-input" value="07:00" required>
+                    </div>
+                    <div class="form-group half">
+                        <label for="pref-sleep-time">🌙 Sleep / Bedtime</label>
+                        <input type="time" id="pref-sleep-time" class="form-input" value="23:00" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="pref-transit-mins">🚗 Transit Time (One-Way Mins)</label>
+                        <input type="number" id="pref-transit-mins" class="form-input" min="0" max="180" value="45" required>
+                    </div>
+                    <div class="form-group half">
+                        <label for="pref-study-hours">📚 Daily Study Goal (Hours)</label>
+                        <input type="number" id="pref-study-hours" class="form-input" min="1" max="12" value="3" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="pref-gym-time">🏋️ Gym / Workout Preference</label>
+                        <select id="pref-gym-time" class="form-select">
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="evening">Evening</option>
+                            <option value="none">No Gym</option>
+                        </select>
+                    </div>
+                    <div class="form-group half">
+                        <label for="pref-gym-duration">Workout Duration (Mins)</label>
+                        <input type="number" id="pref-gym-duration" class="form-input" min="15" max="180" value="60">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="pref-max-credits">Max Credits Per Term</label>
+                        <input type="number" id="pref-max-credits" class="form-input" min="3" max="24" required>
+                    </div>
+                    <div class="form-group half">
+                        <label for="pref-difficulty">Difficulty Tolerance</label>
+                        <select id="pref-difficulty" class="form-select">
+                            <option value="low">Low (Light Workload)</option>
+                            <option value="medium">Medium (Standard)</option>
+                            <option value="high">High (Challenging)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Preferred Days Off (No Classes)</label>
+                    <div class="days-checkbox-group">
+                        <label><input type="checkbox" name="days-off" value="Monday"> Mon</label>
+                        <label><input type="checkbox" name="days-off" value="Tuesday"> Tue</label>
+                        <label><input type="checkbox" name="days-off" value="Wednesday"> Wed</label>
+                        <label><input type="checkbox" name="days-off" value="Thursday"> Thu</label>
+                        <label><input type="checkbox" name="days-off" value="Friday"> Fri</label>
+                    </div>
+                </div>
+
+                <div id="pref-status" class="pref-status"></div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+                    <button type="button" id="cancel-pref-btn" class="secondary-btn">Cancel</button>
+                    <button type="submit" id="save-pref-btn" class="primary-btn">Save Preferences</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
     <div class="app-container">
         <!-- Sidebar -->
         <aside class="sidebar glass-panel">
@@ -15,23 +125,82 @@
                 <div class="logo-icon"></div>
                 <h1>Smart Scheduler</h1>
             </div>
-            
-            <div class="section-title">Available Courses</div>
-            <div id="course-list" class="course-list">
-                <!-- Courses will be dynamically injected here -->
+
+            <!-- Upload Schedule Screenshot Box -->
+            <div class="upload-section">
+                <div class="section-title">📷 Upload Schedule Screenshot</div>
+                <div id="dropzone" class="upload-dropzone">
+                    <input type="file" id="schedule-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" class="file-input-hidden">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Click or drag timetable image here</div>
+                    <div class="upload-subtext">PNG, JPG, WEBP</div>
+                </div>
+                <div id="upload-status" class="upload-status"></div>
             </div>
 
-            <button id="generate-btn" class="primary-btn" disabled>Generate Schedule</button>
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>Active Courses</span>
+                <span id="course-count-badge" class="badge">0</span>
+            </div>
+            
+            <div id="course-list" class="course-list">
+                <!-- Courses injected here -->
+            </div>
+
+            <div class="sidebar-actions">
+                <button id="generate-btn" class="primary-btn" disabled>Optimize Course Schedule</button>
+                <button id="generate-life-btn" class="life-btn" title="Synthesizes full day/week including Study, Transit, Gym, Sleep & Classes">
+                    ✨ Generate Full Routine Plan
+                </button>
+            </div>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <header class="header">
-                <h2>Your Weekly Schedule</h2>
-                <div class="user-profile">
-                    <span id="student-name">Loading...</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 id="calendar-view-title">Academic Classes Only</h2>
+                    <div class="view-toggles">
+                        <button id="view-classes-btn" class="toggle-btn active">Classes Only</button>
+                        <button id="view-routine-btn" class="toggle-btn">Full Day Routine</button>
+                    </div>
+                </div>
+
+                <div class="user-controls">
+                    <div class="user-profile">
+                        <span id="student-name">Loading...</span>
+                    </div>
+
+                    <!-- 3-Stacked Menu (Hamburger Menu) -->
+                    <div class="menu-wrapper">
+                        <button id="hamburger-btn" class="hamburger-btn" aria-label="Menu" title="Menu">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </button>
+                        <div id="dropdown-menu" class="dropdown-menu hidden">
+                            <div class="dropdown-item" id="menu-student-prefs">
+                                ⚙️ Student Preferences
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item logout" id="menu-logout">
+                                🚪 Log Out
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </header>
+
+            <!-- Activity Legend Bar -->
+            <div class="activity-legend">
+                <div class="legend-item"><span class="legend-dot class"></span> Class</div>
+                <div class="legend-item"><span class="legend-dot transit"></span> Transit</div>
+                <div class="legend-item"><span class="legend-dot study"></span> Study Session</div>
+                <div class="legend-item"><span class="legend-dot gym"></span> Gym / Fitness</div>
+                <div class="legend-item"><span class="legend-dot wakeup"></span> Wake / Morning</div>
+                <div class="legend-item"><span class="legend-dot sleep"></span> Sleep / Bedtime</div>
+                <div class="legend-item"><span class="legend-dot meal"></span> Meal / Break</div>
+            </div>
 
             <div class="schedule-container glass-panel">
                 <div class="calendar-grid" id="calendar-grid">
@@ -43,18 +212,20 @@
         <!-- Right Panel (AI Insights) -->
         <aside class="ai-panel glass-panel">
             <div class="section-title">
-                <span class="sparkle">✨</span> AI Insights
+                <span class="sparkle">✨</span> AI Insights & Analysis
             </div>
             <div id="ai-insights-content" class="insights-content">
-                <div class="empty-state">Generate a schedule to see AI insights.</div>
+                <div class="empty-state">
+                    Upload a schedule image or select courses, then click <strong>Generate Full Routine Plan</strong> for AI life scheduling.
+                </div>
             </div>
         </aside>
     </div>
 
     <!-- Scripts -->
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="ui.js"></script>
-    <script src="app.js"></script>
+    <script src="config.js?v=8"></script>
+    <script src="api.js?v=8"></script>
+    <script src="ui.js?v=8"></script>
+    <script src="app.js?v=8"></script>
 </body>
 </html>
