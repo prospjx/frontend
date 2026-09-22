@@ -20,7 +20,11 @@ class SimpleDOMParser(HTMLParser):
                 self.classes.add(cls)
         if tag == "script" and "src" in attr_dict:
             self.scripts.append(attr_dict["src"].split("?")[0])
-        if tag == "link" and attr_dict.get("rel") == "stylesheet" and "href" in attr_dict:
+        if (
+            tag == "link"
+            and attr_dict.get("rel") == "stylesheet"
+            and "href" in attr_dict
+        ):
             self.stylesheets.append(attr_dict["href"].split("?")[0])
         if tag == "input":
             self.inputs.append(attr_dict)
@@ -76,7 +80,9 @@ def test_index_html_contains_all_app_js_dom_ids(frontend_dir):
     assert len(referenced_ids) > 0
 
     missing_ids = referenced_ids - parser.element_ids
-    assert not missing_ids, f"Elements referenced in app.js missing from index.html: {missing_ids}"
+    assert (
+        not missing_ids
+    ), f"Elements referenced in app.js missing from index.html: {missing_ids}"
 
 
 def test_preference_form_inputs_present(frontend_dir):
@@ -99,7 +105,9 @@ def test_preference_form_inputs_present(frontend_dir):
         "pref-difficulty",
     }
     for el_id in expected_form_elements:
-        assert el_id in parser.element_ids, f"Expected form control #{el_id} in index.html"
+        assert (
+            el_id in parser.element_ids
+        ), f"Expected form control #{el_id} in index.html"
 
 
 def test_auth_form_inputs_present(frontend_dir):

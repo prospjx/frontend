@@ -1,6 +1,3 @@
-import re
-
-
 def test_config_js_exports_all_backend_service_urls(frontend_dir):
     """
     Verify config.js properly specifies endpoints for all four backend microservices:
