@@ -78,8 +78,14 @@ async function extractScheduleFromImage(file) {
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Failed to extract schedule from image');
+            let errorMsg = 'Failed to extract schedule from image';
+            try {
+                const err = await response.json();
+                errorMsg = err.detail || errorMsg;
+            } catch (e) {
+                errorMsg = `Server error (${response.status}): ${response.statusText || 'Unable to extract schedule'}`;
+            }
+            throw new Error(errorMsg);
         }
         return await response.json();
     } catch (error) {
@@ -103,8 +109,14 @@ async function generateFullLifeSchedule(studentProfile, enrolledClasses) {
         });
 
         if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.detail || 'Failed to generate full life schedule');
+            let errorMsg = 'Failed to generate full life schedule';
+            try {
+                const err = await response.json();
+                errorMsg = err.detail || errorMsg;
+            } catch (e) {
+                errorMsg = `Server error (${response.status}): ${response.statusText || 'Schedule generation service unavailable'}`;
+            }
+            throw new Error(errorMsg);
         }
         return await response.json();
     } catch (error) {
