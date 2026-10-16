@@ -94,12 +94,44 @@ async function extractScheduleFromImage(file) {
     }
 }
 
-// Synthesize complete day/week routine (Classes + Transit + Study + Gym + Sleep + Meals)
-async function generateFullLifeSchedule(studentProfile, enrolledClasses) {
+// Pre-schedule diagnostic AI check-in (greeting observation + 2-3 questions)
+async function fetchDiagnosticCheckIn(studentProfile, enrolledClasses) {
     try {
         const payload = {
             student_profile: studentProfile,
             enrolled_classes: enrolledClasses
+        };
+
+        const response = await fetch(`${CONFIG.AI_ASSISTANT_API_URL}/analyze/diagnostic-check-in`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            let errorMsg = 'Failed to fetch diagnostic check-in';
+            try {
+                const err = await response.json();
+                errorMsg = err.detail || errorMsg;
+            } catch (e) {
+                errorMsg = `Server error (${response.status}): ${response.statusText || 'Diagnostic service unavailable'}`;
+            }
+            throw new Error(errorMsg);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching diagnostic check-in:', error);
+        throw error;
+    }
+}
+
+// Synthesize complete day/week routine (Classes + Transit + Study + Gym + Sleep + Meals)
+async function generateFullLifeSchedule(studentProfile, enrolledClasses, diagnosticAnswers = null) {
+    try {
+        const payload = {
+            student_profile: studentProfile,
+            enrolled_classes: enrolledClasses,
+            diagnostic_answers: diagnosticAnswers
         };
 
         const response = await fetch(`${CONFIG.AI_ASSISTANT_API_URL}/analyze/full-schedule`, {

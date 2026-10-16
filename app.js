@@ -9,7 +9,10 @@ const state = {
     lastWeeklySchedule: {},
     lastWeeklyRoutine: {},
     lastAiInsights: null,
-    currentView: 'classes' // 'routine' or 'classes'
+    currentView: 'classes', // 'routine' or 'classes'
+    diagnosticQuestions: [],
+    diagnosticAnswers: {}, // key: question_id, val: string answer
+    currentAiTab: 'coach' // 'coach' or 'insights'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -50,7 +53,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dropzone = document.getElementById('dropzone');
     const scheduleFileInput = document.getElementById('schedule-file-input');
     const uploadStatus = document.getElementById('upload-status');
-    const generateBtn = document.getElementById('generate-btn');
     const generateLifeBtn = document.getElementById('generate-life-btn');
     const studentNameEl = document.getElementById('student-name');
 
@@ -59,12 +61,107 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viewClassesBtn = document.getElementById('view-classes-btn');
     const calendarViewTitle = document.getElementById('calendar-view-title');
 
-    // Sidebar Segmented Tabs
-    const sidebarTabCourses = document.getElementById('sidebar-tab-courses');
-    const sidebarTabLife = document.getElementById('sidebar-tab-life');
-    const sidebarPaneCourses = document.getElementById('sidebar-pane-courses');
-    const sidebarPaneLife = document.getElementById('sidebar-pane-life');
-    const creditCounterBadge = document.getElementById('credit-counter-badge');
+    // Right Panel AI Coach & Insights 2-Tab Switcher
+    const aiTabCoachBtn = document.getElementById('ai-tab-coach-btn');
+    const aiTabInsightsBtn = document.getElementById('ai-tab-insights-btn');
+    const aiPaneCoach = document.getElementById('ai-pane-coach');
+    const aiPaneInsights = document.getElementById('ai-pane-insights');
+    const aiChatThread = document.getElementById('ai-chat-thread');
+    const startCheckinBtn = document.getElementById('start-checkin-btn');
+    const aiChatInput = document.getElementById('ai-chat-input');
+    const aiSendReplyBtn = document.getElementById('ai-send-reply-btn');
+    const aiBuildPlanBtn = document.getElementById('ai-build-plan-btn');
+
+    // Theme Toggle (Light theme by default, optional dark mode toggle)
+    const themeToggleBtn = document.getElementById('theme-toggle-btn');
+    const themeToggleIcon = document.getElementById('theme-toggle-icon');
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            if (themeToggleIcon) themeToggleIcon.textContent = '☀️';
+            if (themeToggleBtn) themeToggleBtn.title = 'Switch to Light Theme';
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            if (themeToggleIcon) themeToggleIcon.textContent = '🌙';
+            if (themeToggleBtn) themeToggleBtn.title = 'Switch to Dark Theme';
+        }
+        localStorage.setItem('scs_theme', theme);
+    }
+
+    // Default to 'light' theme
+    const savedTheme = localStorage.getItem('scs_theme') || 'light';
+    applyTheme(savedTheme);
+
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+    }
+
+    // -------------------------------------------------------------
+    // Collapsible Panels (Left Sidebar & Right AI Panel)
+    // -------------------------------------------------------------
+    const appContainer = document.querySelector('.app-container');
+    const sidebarCollapseBtn = document.getElementById('sidebar-collapse-btn');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+    const aiPanelCollapseBtn = document.getElementById('ai-panel-collapse-btn');
+    const aiPanelToggleBtn = document.getElementById('ai-panel-toggle-btn');
+
+    function toggleSidebar(forceState) {
+        if (!appContainer) return;
+        const willCollapse = typeof forceState === 'boolean' 
+            ? forceState 
+            : !appContainer.classList.contains('sidebar-collapsed');
+        
+        if (willCollapse) {
+            appContainer.classList.add('sidebar-collapsed');
+            if (sidebarToggleBtn) sidebarToggleBtn.classList.remove('hidden');
+        } else {
+            appContainer.classList.remove('sidebar-collapsed');
+            if (sidebarToggleBtn) sidebarToggleBtn.classList.add('hidden');
+        }
+    }
+
+    function toggleAiPanel(forceState) {
+        if (!appContainer) return;
+        const willCollapse = typeof forceState === 'boolean'
+            ? forceState
+            : !appContainer.classList.contains('ai-collapsed');
+
+        if (willCollapse) {
+            appContainer.classList.add('ai-collapsed');
+            if (aiPanelToggleBtn) {
+                aiPanelToggleBtn.classList.add('active');
+                aiPanelToggleBtn.title = 'Show AI Coach & Insights Panel';
+            }
+        } else {
+            appContainer.classList.remove('ai-collapsed');
+            if (aiPanelToggleBtn) {
+                aiPanelToggleBtn.classList.remove('active');
+                aiPanelToggleBtn.title = 'Hide AI Coach & Insights Panel';
+            }
+        }
+    }
+
+    if (sidebarCollapseBtn) {
+        sidebarCollapseBtn.addEventListener('click', () => toggleSidebar(true));
+    }
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener('click', () => toggleSidebar(false));
+    }
+    if (aiPanelCollapseBtn) {
+        aiPanelCollapseBtn.addEventListener('click', () => toggleAiPanel(true));
+    }
+    if (aiPanelToggleBtn) {
+        aiPanelToggleBtn.addEventListener('click', () => toggleAiPanel());
+    }
+
+    // Ordered AI Schedule Builder Elements
+    const extractedClassesList = document.getElementById('extracted-classes-list');
+    const classCounterBadge = document.getElementById('class-counter-badge');
     const editPrefsQuickBtn = document.getElementById('edit-prefs-quick-btn');
 
     // Preference Summary Elements
@@ -73,16 +170,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const summarySleepWindow = document.getElementById('summary-sleep-window');
     const summaryGym = document.getElementById('summary-gym');
 
-    function updateCreditCounter() {
-        if (!creditCounterBadge) return;
-        let selectedCredits = 0;
-        const maxCredits = state.studentProfile?.preferences?.max_credits_per_term || 18;
-        state.loadedCourses.forEach(c => {
-            if (state.selectedCourses.has(c.course_id)) {
-                selectedCredits += (c.credits || 0);
-            }
-        });
-        creditCounterBadge.textContent = `${selectedCredits} / ${maxCredits} Credits`;
+    function updateClassCounter() {
+        if (!classCounterBadge) return;
+        const count = state.extractedClasses ? state.extractedClasses.length : 0;
+        classCounterBadge.textContent = `${count} ${count === 1 ? 'Class' : 'Classes'}`;
     }
 
     function updatePreferenceSummaryCard(profile) {
@@ -107,46 +198,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             summaryGym.textContent = gymT === 'none' ? 'No Gym' : `${p.gym_time_preference} (${p.gym_duration_minutes || 60}m)`;
         }
     }
-
-    function switchSidebarMode(mode) {
-        if (mode === 'courses') {
-            sidebarTabCourses.classList.add('active');
-            sidebarTabLife.classList.remove('active');
-            sidebarPaneCourses.classList.remove('hidden');
-            sidebarPaneLife.classList.add('hidden');
-
-            // Switch calendar view toggle to 'Classes Only'
-            state.currentView = 'classes';
-            viewClassesBtn.classList.add('active');
-            viewRoutineBtn.classList.remove('active');
-            calendarViewTitle.textContent = "Academic Classes Only";
-            renderCalendar(state.lastWeeklySchedule, 'calendar-grid');
-        } else {
-            sidebarTabLife.classList.add('active');
-            sidebarTabCourses.classList.remove('active');
-            sidebarPaneLife.classList.remove('hidden');
-            sidebarPaneCourses.classList.add('hidden');
-
-            // Switch calendar view toggle to 'Full Day Routine'
-            state.currentView = 'routine';
-            viewRoutineBtn.classList.add('active');
-            viewClassesBtn.classList.remove('active');
-            calendarViewTitle.textContent = "Weekly Life & Routine Plan";
-            if (Object.keys(state.lastWeeklyRoutine).length > 0) {
-                renderFullRoutineCalendar(state.lastWeeklyRoutine, 'calendar-grid');
-            } else {
-                document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Upload a timetable screenshot or click "Generate Full Routine Plan" to view 24/7 routine.</div>';
-            }
-        }
-    }
-
-    sidebarTabCourses.addEventListener('click', () => {
-        switchSidebarMode('courses');
-    });
-
-    sidebarTabLife.addEventListener('click', () => {
-        switchSidebarMode('life');
-    });
 
     if (editPrefsQuickBtn) {
         editPrefsQuickBtn.addEventListener('click', () => {
@@ -367,17 +418,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             state.lastWeeklySchedule = extractedWeekly;
             renderCalendar(extractedWeekly, 'calendar-grid');
 
-            // Add extracted courses to list
+            // Render extracted classes into Step 2 list
             state.loadedCourses = extractedCoursesList;
-            renderCourseList(state.loadedCourses, 'course-list', (courseId, isSelected) => {
+            updateClassCounter();
+            renderCourseList(state.loadedCourses, 'extracted-classes-list', (courseId, isSelected) => {
                 if (isSelected) state.selectedCourses.add(courseId);
                 else state.selectedCourses.delete(courseId);
-                generateBtn.disabled = state.selectedCourses.size === 0;
             });
-            generateBtn.disabled = false;
 
-            // Automatically trigger full life routine synthesis with user's preferences!
-            await triggerFullLifeRoutine();
+            // Automatically trigger AI Coach diagnostic check-in flow!
+            await startDiagnosticCheckIn();
 
         } catch (err) {
             uploadStatus.textContent = `Extraction failed: ${err.message}`;
@@ -386,44 +436,278 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // -------------------------------------------------------------
-    // 5. Full Day / Week Life Routine Synthesis
+    // 5. Right Panel AI Coach & Insights Tab Switcher
+    // -------------------------------------------------------------
+    function switchAiPanelTab(tab) {
+        state.currentAiTab = tab;
+        if (tab === 'coach') {
+            aiTabCoachBtn.classList.add('active');
+            aiTabInsightsBtn.classList.remove('active');
+            aiPaneCoach.classList.remove('hidden');
+            aiPaneInsights.classList.add('hidden');
+        } else {
+            aiTabInsightsBtn.classList.add('active');
+            aiTabCoachBtn.classList.remove('active');
+            aiPaneInsights.classList.remove('hidden');
+            aiPaneCoach.classList.add('hidden');
+        }
+    }
+
+    aiTabCoachBtn.addEventListener('click', () => switchAiPanelTab('coach'));
+    aiTabInsightsBtn.addEventListener('click', () => switchAiPanelTab('insights'));
+
+    // Helper: get classes to schedule from extracted classes, weekly schedule, or selected courses
+    function getClassesToSchedule() {
+        let classes = state.extractedClasses;
+        if (!classes || classes.length === 0) {
+            classes = [];
+            for (const [day, dayClasses] of Object.entries(state.lastWeeklySchedule)) {
+                dayClasses.forEach(c => {
+                    classes.push({
+                        course_id: c.course_id,
+                        title: c.title || c.course_id,
+                        day: day,
+                        start_time: c.start_time,
+                        end_time: c.end_time,
+                        location: c.location || 'Campus'
+                    });
+                });
+            }
+        }
+
+        // Fallback: if student selected courses from the catalog list but hasn't run optimizer yet
+        if (classes.length === 0 && state.selectedCourses.size > 0) {
+            state.loadedCourses.forEach(c => {
+                if (state.selectedCourses.has(c.course_id)) {
+                    if (c.sections && c.sections.length > 0) {
+                        const sec = c.sections[0];
+                        (sec.days || ['Monday', 'Wednesday', 'Friday']).forEach(day => {
+                            classes.push({
+                                course_id: c.course_id,
+                                title: c.title || c.course_id,
+                                day: day,
+                                start_time: sec.start_time || '10:00',
+                                end_time: sec.end_time || '11:15',
+                                location: sec.location || 'Hall A'
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        return classes;
+    }
+
+    // Helper: append a message to the AI chat thread
+    function appendChatMessage(sender, text, options = {}) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-msg ${sender}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${sender}`;
+        if (options.isGreeting) bubble.classList.add('ai-greeting');
+
+        if (options.observation) {
+            const obsEl = document.createElement('div');
+            obsEl.className = 'ai-observation';
+            obsEl.textContent = options.observation;
+            bubble.appendChild(obsEl);
+        }
+
+        if (text) {
+            const textEl = document.createElement('div');
+            textEl.className = options.isQuestion ? 'ai-question' : '';
+            textEl.textContent = text;
+            bubble.appendChild(textEl);
+        }
+
+        msgDiv.appendChild(bubble);
+
+        // Render Quick-Reply pills if question has quick_replies
+        if (options.quickReplies && options.quickReplies.length > 0 && options.questionId) {
+            const pillsDiv = document.createElement('div');
+            pillsDiv.className = 'quick-replies-group';
+            pillsDiv.dataset.questionId = options.questionId;
+
+            options.quickReplies.forEach(reply => {
+                const chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'quick-reply-chip';
+                chip.textContent = reply;
+
+                chip.addEventListener('click', () => {
+                    // Deselect siblings in this group
+                    pillsDiv.querySelectorAll('.quick-reply-chip').forEach(c => c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    // Store in diagnosticAnswers
+                    state.diagnosticAnswers[options.questionId] = reply;
+                });
+
+                pillsDiv.appendChild(chip);
+            });
+
+            msgDiv.appendChild(pillsDiv);
+        }
+
+        aiChatThread.appendChild(msgDiv);
+        aiChatThread.scrollTop = aiChatThread.scrollHeight;
+        return msgDiv;
+    }
+
+    // -------------------------------------------------------------
+    // 6. Interactive Diagnostic Check-In Flow
+    // -------------------------------------------------------------
+    async function startDiagnosticCheckIn() {
+        switchAiPanelTab('coach');
+
+        if (!state.studentProfile) {
+            state.studentProfile = await fetchStudentProfile(CONFIG.DEFAULT_STUDENT_ID);
+        }
+
+        const classesToSchedule = getClassesToSchedule();
+        if (classesToSchedule.length === 0) {
+            aiChatThread.innerHTML = `
+                <div class="chat-msg ai">
+                    <div class="chat-bubble ai">
+                        👋 Hi! Please upload a schedule screenshot or select courses on the left first so I can inspect your timetable.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Clear thread and show loading indicator
+        aiChatThread.innerHTML = `
+            <div class="chat-msg ai" id="ai-loading-bubble">
+                <div class="chat-bubble ai">
+                    🔍 Analyzing your timetable and preparing your personalized routine check-in...
+                </div>
+            </div>
+        `;
+
+        try {
+            const response = await fetchDiagnosticCheckIn(state.studentProfile, classesToSchedule);
+            aiChatThread.innerHTML = ''; // Remove loading
+
+            // Render Greeting & Empathic Observation
+            appendChatMessage('ai', '', {
+                observation: `💬 ${response.greeting_observation}`,
+                isGreeting: true
+            });
+
+            // Store questions and render each question with quick-reply chips
+            state.diagnosticQuestions = response.questions || [];
+            state.diagnosticAnswers = {};
+
+            state.diagnosticQuestions.forEach((q, idx) => {
+                appendChatMessage('ai', `${idx + 1}. ${q.question_text}`, {
+                    isQuestion: true,
+                    questionId: q.id,
+                    quickReplies: q.quick_replies
+                });
+            });
+
+        } catch (err) {
+            aiChatThread.innerHTML = `
+                <div class="chat-msg ai">
+                    <div class="chat-bubble ai" style="border-color: var(--accent-rose); color: var(--accent-rose);">
+                        ⚠️ Could not start diagnostic check-in: ${err.message}. You can still build your plan directly using your default preferences!
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    if (startCheckinBtn) {
+        startCheckinBtn.addEventListener('click', startDiagnosticCheckIn);
+    }
+    // Also delegate on aiChatThread in case empty state is restored
+    aiChatThread.addEventListener('click', (e) => {
+        if (e.target && (e.target.id === 'start-checkin-btn' || e.target.closest('#start-checkin-btn'))) {
+            startDiagnosticCheckIn();
+        }
+    });
+
+    // Send custom reply from chat input bar
+    function handleCustomUserReply() {
+        const text = aiChatInput.value.trim();
+        if (!text) return;
+
+        appendChatMessage('user', text);
+        aiChatInput.value = '';
+
+        // If there are questions that don't have an answer yet, assign this text to the first unanswered question
+        if (state.diagnosticQuestions && state.diagnosticQuestions.length > 0) {
+            const unanswered = state.diagnosticQuestions.find(q => !state.diagnosticAnswers[q.id]);
+            if (unanswered) {
+                state.diagnosticAnswers[unanswered.id] = text;
+            } else {
+                // Attach as a general note or follow-up
+                state.diagnosticAnswers['custom_followup'] = text;
+            }
+        }
+    }
+
+    aiSendReplyBtn.addEventListener('click', handleCustomUserReply);
+    aiChatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleCustomUserReply();
+        }
+    });
+
+    // -------------------------------------------------------------
+    // 7. Full Day / Week Life Routine Synthesis & Follow-up
     // -------------------------------------------------------------
     async function triggerFullLifeRoutine() {
         if (!state.studentProfile) {
             state.studentProfile = await fetchStudentProfile(CONFIG.DEFAULT_STUDENT_ID);
         }
 
-        const originalText = generateLifeBtn.textContent;
-        generateLifeBtn.textContent = 'Planning Full Life Routine...';
-        generateLifeBtn.disabled = true;
+        const originalBtnText = aiBuildPlanBtn.textContent;
+        aiBuildPlanBtn.textContent = 'Synthesizing 7-Day Plan...';
+        aiBuildPlanBtn.disabled = true;
+
+        if (generateLifeBtn) {
+            generateLifeBtn.textContent = 'Planning Routine...';
+            generateLifeBtn.disabled = true;
+        }
 
         document.getElementById('calendar-grid').innerHTML = '<div class="loading">Synthesizing full 24/7 weekly routine (Classes + Transit + Study + Gym + Sleep) via AI...</div>';
 
         try {
-            // If classes were uploaded via image, use them; otherwise construct from selected catalog courses
-            let classesToSchedule = state.extractedClasses;
-            if (!classesToSchedule || classesToSchedule.length === 0) {
-                // Build from current weekly schedule
-                classesToSchedule = [];
-                for (const [day, classes] of Object.entries(state.lastWeeklySchedule)) {
-                    classes.forEach(c => {
-                        classesToSchedule.push({
-                            course_id: c.course_id,
-                            title: c.title || c.course_id,
-                            day: day,
-                            start_time: c.start_time,
-                            end_time: c.end_time,
-                            location: c.location || 'Campus'
-                        });
+            const classesToSchedule = getClassesToSchedule();
+
+            // Prepare diagnostic_answers array for POST /full-schedule
+            let formattedAnswers = null;
+            if (state.diagnosticQuestions && state.diagnosticQuestions.length > 0) {
+                formattedAnswers = state.diagnosticQuestions.map(q => ({
+                    question_id: q.id,
+                    question_text: q.question_text,
+                    answer: state.diagnosticAnswers[q.id] || "Default preference"
+                }));
+
+                // Include any custom write-in if provided
+                if (state.diagnosticAnswers['custom_followup']) {
+                    formattedAnswers.push({
+                        question_id: 'custom_followup',
+                        question_text: 'Student custom request',
+                        answer: state.diagnosticAnswers['custom_followup']
                     });
                 }
             }
 
-            const lifeResponse = await generateFullLifeSchedule(state.studentProfile, classesToSchedule);
+            const lifeResponse = await generateFullLifeSchedule(
+                state.studentProfile,
+                classesToSchedule,
+                formattedAnswers
+            );
+
             state.lastWeeklyRoutine = lifeResponse.weekly_routine;
             state.lastAiInsights = lifeResponse.ai_insights;
 
-            // Switch view to routine
+            // Switch calendar view to 7-Day Routine
             state.currentView = 'routine';
             viewRoutineBtn.classList.add('active');
             viewClassesBtn.classList.remove('active');
@@ -432,18 +716,35 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderFullRoutineCalendar(state.lastWeeklyRoutine, 'calendar-grid');
             renderAIInsights(state.lastAiInsights, 'ai-insights-content');
 
+            // Post completion message in AI chat
+            appendChatMessage('ai', "🎉 Your personalized 7-day routine plan is ready! I've scheduled your transit buffers, subject-specific study sessions, fitness, and downtime around your classes. Check the 📊 Insights & Warnings tab for workload analysis or type below if you'd like any tweaks!");
+
         } catch (err) {
             alert(`Error generating full life routine: ${err.message}`);
             if (Object.keys(state.lastWeeklySchedule).length > 0) {
                 renderCalendar(state.lastWeeklySchedule, 'calendar-grid');
             }
         } finally {
-            generateLifeBtn.textContent = originalText;
-            generateLifeBtn.disabled = false;
+            aiBuildPlanBtn.textContent = originalBtnText;
+            aiBuildPlanBtn.disabled = false;
+            if (generateLifeBtn) {
+                generateLifeBtn.textContent = '✨ Generate Full Routine Plan';
+                generateLifeBtn.disabled = false;
+            }
         }
     }
 
-    generateLifeBtn.addEventListener('click', triggerFullLifeRoutine);
+    aiBuildPlanBtn.addEventListener('click', triggerFullLifeRoutine);
+    if (generateLifeBtn) {
+        generateLifeBtn.addEventListener('click', async () => {
+            // If diagnostic hasn't been run, start check-in; otherwise generate routine
+            if (state.diagnosticQuestions.length === 0) {
+                await startDiagnosticCheckIn();
+            } else {
+                await triggerFullLifeRoutine();
+            }
+        });
+    }
 
     // -------------------------------------------------------------
     // 6. View Toggles (Full Routine vs Classes Only)
@@ -456,7 +757,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Object.keys(state.lastWeeklyRoutine).length > 0) {
             renderFullRoutineCalendar(state.lastWeeklyRoutine, 'calendar-grid');
         } else {
-            document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Click "Generate Full Routine Plan" to view 24/7 schedule.</div>';
+            document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Upload a timetable screenshot on the left to generate your 24/7 AI schedule.</div>';
         }
     });
 
@@ -469,60 +770,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // -------------------------------------------------------------
-    // 7. Initial Data Fetch & Academic Course Optimization
+    // 7. Initial Data Fetch & Profile Initialization
     // -------------------------------------------------------------
     renderCalendar({}, 'calendar-grid');
-
-    const courses = await fetchCourses();
-    state.loadedCourses = courses;
-    renderCourseList(courses, 'course-list', (courseId, isSelected) => {
-        if (isSelected) {
-            state.selectedCourses.add(courseId);
-        } else {
-            state.selectedCourses.delete(courseId);
-        }
-        updateCreditCounter();
-        generateBtn.disabled = state.selectedCourses.size === 0;
-    });
 
     const profile = await fetchStudentProfile(CONFIG.DEFAULT_STUDENT_ID);
     if (profile) {
         state.studentProfile = profile;
         studentNameEl.textContent = `Student: ${profile.name}`;
-        updateCreditCounter();
         updatePreferenceSummaryCard(profile);
     }
-
-    generateBtn.addEventListener('click', async () => {
-        if (state.selectedCourses.size === 0) return;
-
-        const originalText = generateBtn.textContent;
-        generateBtn.textContent = 'Optimizing...';
-        generateBtn.disabled = true;
-
-        document.getElementById('calendar-grid').innerHTML = '<div class="loading">Optimizing academic schedule via AI...</div>';
-
-        try {
-            const courseIdsArray = Array.from(state.selectedCourses);
-            const scheduleResponse = await generateSchedule(CONFIG.DEFAULT_STUDENT_ID, courseIdsArray);
-
-            state.lastWeeklySchedule = scheduleResponse.weekly_schedule;
-            state.lastAiInsights = scheduleResponse.ai_insights;
-
-            state.currentView = 'classes';
-            viewClassesBtn.classList.add('active');
-            viewRoutineBtn.classList.remove('active');
-            calendarViewTitle.textContent = "Academic Classes Only";
-
-            renderCalendar(scheduleResponse.weekly_schedule, 'calendar-grid');
-            renderAIInsights(scheduleResponse.ai_insights, 'ai-insights-content');
-
-        } catch (error) {
-            alert(`Error: ${error.message}`);
-            renderCalendar({}, 'calendar-grid');
-        } finally {
-            generateBtn.textContent = originalText;
-            generateBtn.disabled = false;
-        }
-    });
 });

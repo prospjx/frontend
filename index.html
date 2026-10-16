@@ -142,77 +142,76 @@
 
     <!-- Main App Container -->
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar glass-panel">
+        <!-- Sidebar (AI Schedule Builder) -->
+        <aside class="sidebar glass-panel" id="sidebar-left">
             <div class="logo">
-                <div class="logo-icon"></div>
-                <h1>Smart Scheduler</h1>
+                <div class="logo-icon">✨</div>
+                <h1>AI Schedule Builder</h1>
+                <button type="button" id="sidebar-collapse-btn" class="panel-collapse-btn" aria-label="Collapse sidebar" title="Collapse sidebar">◀</button>
             </div>
 
-            <!-- Segmented Pill Toggle -->
-            <div class="sidebar-pill-toggle">
-                <button id="sidebar-tab-courses" class="sidebar-tab-btn active" type="button">📚 Course Builder</button>
-                <button id="sidebar-tab-life" class="sidebar-tab-btn" type="button">✨ Life Coach</button>
-            </div>
-
-            <!-- Tab 1: Course Builder Mode -->
-            <div id="sidebar-pane-courses" class="sidebar-pane active">
-                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                    <span>Active Courses</span>
-                    <span id="credit-counter-badge" class="badge">0 / 18 Credits</span>
+            <!-- Single Ordered AI Schedule Builder Workflow -->
+            <div class="sidebar-workflow">
+                <div class="workflow-step">
+                    <div class="section-title">
+                        <span class="step-badge">1</span> Upload Timetable Screenshot
+                    </div>
+                    <div id="dropzone" class="upload-dropzone">
+                        <input type="file" id="schedule-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" class="file-input-hidden">
+                        <div class="upload-icon">📷</div>
+                        <div class="upload-text">Drop timetable image here</div>
+                        <div class="upload-subtext">or click to browse (PNG, JPG)</div>
+                    </div>
+                    <div id="upload-status" class="upload-status"></div>
                 </div>
-                
-                <div class="course-list-container">
-                    <div id="course-list" class="course-list">
-                        <!-- Courses injected here -->
+
+                <!-- Step 2: Extracted Classes List (Shown once screenshot is uploaded) -->
+                <div class="workflow-step" id="extracted-classes-section">
+                    <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div><span class="step-badge">2</span> Extracted Classes</div>
+                        <span id="class-counter-badge" class="badge">0 Classes</span>
+                    </div>
+                    <div class="course-list-container">
+                        <div id="extracted-classes-list" class="course-list">
+                            <div class="empty-list-note">Upload your timetable above to extract classes automatically.</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="sidebar-actions">
-                    <button id="generate-btn" class="primary-btn" disabled>Optimize Course Schedule</button>
-                </div>
-            </div>
-
-            <!-- Tab 2: Life Coach Mode -->
-            <div id="sidebar-pane-life" class="sidebar-pane hidden">
-                <div class="section-title">Upload Schedule Screenshot</div>
-                <div id="dropzone" class="upload-dropzone">
-                    <input type="file" id="schedule-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" class="file-input-hidden">
-                    <div class="upload-icon">📷</div>
-                    <div class="upload-text">Drop timetable image here</div>
-                    <div class="upload-subtext">or click to browse (PNG, JPG)</div>
-                </div>
-                <div id="upload-status" class="upload-status"></div>
-
-                <!-- Compact Active Preferences Summary Card -->
-                <div class="pref-summary-card">
-                    <div class="pref-summary-header">
-                        <span class="pref-summary-title">⚙️ Active Life Routine</span>
-                        <button type="button" id="edit-prefs-quick-btn" class="text-link-btn">Edit</button>
+                <!-- Step 3: Active Student Preferences Summary Card -->
+                <div class="workflow-step">
+                    <div class="section-title">
+                        <span class="step-badge">3</span> Schedule Preferences
                     </div>
-                    <div class="pref-summary-grid">
-                        <div class="pref-summary-item">
-                            <span class="pref-summary-label">Chronotype</span>
-                            <span id="summary-chronotype" class="pref-summary-val">Morning Lark 🌅</span>
+                    <div class="pref-summary-card">
+                        <div class="pref-summary-header">
+                            <span class="pref-summary-title">⚙️ Routine Settings</span>
+                            <button type="button" id="edit-prefs-quick-btn" class="text-link-btn">Edit</button>
                         </div>
-                        <div class="pref-summary-item">
-                            <span class="pref-summary-label">Study Style</span>
-                            <span id="summary-study-style" class="pref-summary-val">Deep Work 🧠</span>
-                        </div>
-                        <div class="pref-summary-item">
-                            <span class="pref-summary-label">Wake / Sleep</span>
-                            <span id="summary-sleep-window" class="pref-summary-val">07:00 – 23:00</span>
-                        </div>
-                        <div class="pref-summary-item">
-                            <span class="pref-summary-label">Gym Routine</span>
-                            <span id="summary-gym" class="pref-summary-val">Afternoon (60m)</span>
+                        <div class="pref-summary-grid">
+                            <div class="pref-summary-item">
+                                <span class="pref-summary-label">Chronotype</span>
+                                <span id="summary-chronotype" class="pref-summary-val">Morning Lark 🌅</span>
+                            </div>
+                            <div class="pref-summary-item">
+                                <span class="pref-summary-label">Study Style</span>
+                                <span id="summary-study-style" class="pref-summary-val">Deep Work 🧠</span>
+                            </div>
+                            <div class="pref-summary-item">
+                                <span class="pref-summary-label">Wake / Sleep</span>
+                                <span id="summary-sleep-window" class="pref-summary-val">07:00 – 23:00</span>
+                            </div>
+                            <div class="pref-summary-item">
+                                <span class="pref-summary-label">Gym Routine</span>
+                                <span id="summary-gym" class="pref-summary-val">Afternoon (60m)</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="sidebar-actions" style="margin-top: auto;">
                     <button id="generate-life-btn" class="primary-btn" title="Synthesizes full day/week including Study, Transit, Gym, Sleep & Classes">
-                        ✨ Generate Full Routine Plan
+                        ✨ Start AI Schedule Check-In
                     </button>
                 </div>
             </div>
@@ -221,11 +220,14 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="header">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <h2 id="calendar-view-title">Academic Classes Only</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button type="button" id="sidebar-toggle-btn" class="header-icon-btn hidden" aria-label="Open Sidebar" title="Show Schedule Builder Sidebar">
+                        <span>☰</span>
+                    </button>
+                    <h2 id="calendar-view-title">Weekly Schedule & Life Plan</h2>
                     <div class="view-toggles">
-                        <button id="view-classes-btn" class="toggle-btn active">Classes Only</button>
-                        <button id="view-routine-btn" class="toggle-btn">Full Day Routine</button>
+                        <button id="view-routine-btn" class="toggle-btn active">Full Day Routine</button>
+                        <button id="view-classes-btn" class="toggle-btn">Classes Only</button>
                     </div>
                 </div>
 
@@ -233,6 +235,16 @@
                     <div class="user-profile">
                         <span id="student-name">Loading...</span>
                     </div>
+
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Toggle Theme" title="Toggle Light/Dark Theme">
+                        <span id="theme-toggle-icon">🌙</span>
+                    </button>
+
+                    <!-- Toggle Right AI Panel Button -->
+                    <button type="button" id="ai-panel-toggle-btn" class="header-icon-btn" aria-label="Toggle AI Coach & Insights" title="Toggle AI Coach Panel">
+                        <span>🤖</span>
+                    </button>
 
                     <!-- 3-Stacked Menu (Hamburger Menu) -->
                     <div class="menu-wrapper">
@@ -272,14 +284,48 @@
             </div>
         </main>
 
-        <!-- Right Panel (AI Insights) -->
-        <aside class="ai-panel glass-panel">
-            <div class="section-title">
-                <span class="sparkle">✨</span> AI Insights & Analysis
+        <!-- Right Panel (AI Coach & Insights 2-Tab Sidebar) -->
+        <aside class="ai-panel glass-panel" id="ai-panel-right">
+            <!-- 2-Tab Right Sidebar Header -->
+            <div class="ai-panel-top-bar">
+                <div class="ai-panel-pill-toggle">
+                    <button id="ai-tab-coach-btn" class="ai-tab-btn active">💬 AI Coach</button>
+                    <button id="ai-tab-insights-btn" class="ai-tab-btn">📊 Insights & Warnings</button>
+                </div>
+                <button type="button" id="ai-panel-collapse-btn" class="panel-collapse-btn" aria-label="Collapse AI panel" title="Collapse AI panel">▶</button>
             </div>
-            <div id="ai-insights-content" class="insights-content">
-                <div class="empty-state">
-                    Upload a schedule image or select courses, then click <strong>Generate Full Routine Plan</strong> for AI life scheduling.
+
+            <!-- Tab 1: AI Coach Conversational Pane -->
+            <div id="ai-pane-coach" class="ai-tab-pane active">
+                <div id="ai-chat-thread" class="ai-chat-thread">
+                    <div class="chat-empty-state" id="chat-empty-state">
+                        <div class="empty-sparkle">✨</div>
+                        <h3>Meet Your AI Life Coach</h3>
+                        <p>Upload a schedule screenshot or select courses, then start a check-in. Your AI Coach will ask 2–3 questions before calibrating your 7-day routine.</p>
+                        <button id="start-checkin-btn" class="secondary-btn" style="margin-top: 10px; width: 100%;">
+                            💬 Start AI Routine Check-In
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat Bottom Controls (Input + Submit Button) -->
+                <div class="ai-chat-footer" id="ai-chat-footer">
+                    <div class="ai-chat-input-bar">
+                        <input type="text" id="ai-chat-input" placeholder="Type your reply or click options above..." autocomplete="off">
+                        <button id="ai-send-reply-btn" class="icon-send-btn" title="Send Reply">➤</button>
+                    </div>
+                    <button id="ai-build-plan-btn" class="primary-btn ai-build-plan-btn">
+                        Build My 7-Day Plan ✨
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Insights & Warnings Pane -->
+            <div id="ai-pane-insights" class="ai-tab-pane hidden">
+                <div id="ai-insights-content" class="insights-content">
+                    <div class="empty-state">
+                        Upload a schedule image or select courses, then complete the AI Coach check-in to see routine insights and workload warnings.
+                    </div>
                 </div>
             </div>
         </aside>
