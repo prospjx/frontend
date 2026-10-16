@@ -114,11 +114,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             sidebarTabLife.classList.remove('active');
             sidebarPaneCourses.classList.remove('hidden');
             sidebarPaneLife.classList.add('hidden');
+
+            // Switch calendar view toggle to 'Classes Only'
+            state.currentView = 'classes';
+            viewClassesBtn.classList.add('active');
+            viewRoutineBtn.classList.remove('active');
+            calendarViewTitle.textContent = "Academic Classes Only";
+            renderCalendar(state.lastWeeklySchedule, 'calendar-grid');
         } else {
             sidebarTabLife.classList.add('active');
             sidebarTabCourses.classList.remove('active');
             sidebarPaneLife.classList.remove('hidden');
             sidebarPaneCourses.classList.add('hidden');
+
+            // Switch calendar view toggle to 'Full Day Routine'
+            state.currentView = 'routine';
+            viewRoutineBtn.classList.add('active');
+            viewClassesBtn.classList.remove('active');
+            calendarViewTitle.textContent = "Weekly Life & Routine Plan";
+            if (Object.keys(state.lastWeeklyRoutine).length > 0) {
+                renderFullRoutineCalendar(state.lastWeeklyRoutine, 'calendar-grid');
+            } else {
+                document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Upload a timetable screenshot or click "Generate Full Routine Plan" to view 24/7 routine.</div>';
+            }
         }
     }
 
