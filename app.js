@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const prefGymDurationInput = document.getElementById('pref-gym-duration');
     const prefMaxCreditsInput = document.getElementById('pref-max-credits');
     const prefDifficultySelect = document.getElementById('pref-difficulty');
+    const prefEnergyChronotypeSelect = document.getElementById('pref-energy-chronotype');
+    const prefStudyStyleSelect = document.getElementById('pref-study-style');
+    const prefMinGapCommuteInput = document.getElementById('pref-min-gap-commute');
 
     // Upload & Actions
     const dropzone = document.getElementById('dropzone');
@@ -55,6 +58,84 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viewRoutineBtn = document.getElementById('view-routine-btn');
     const viewClassesBtn = document.getElementById('view-classes-btn');
     const calendarViewTitle = document.getElementById('calendar-view-title');
+
+    // Sidebar Segmented Tabs
+    const sidebarTabCourses = document.getElementById('sidebar-tab-courses');
+    const sidebarTabLife = document.getElementById('sidebar-tab-life');
+    const sidebarPaneCourses = document.getElementById('sidebar-pane-courses');
+    const sidebarPaneLife = document.getElementById('sidebar-pane-life');
+    const creditCounterBadge = document.getElementById('credit-counter-badge');
+    const editPrefsQuickBtn = document.getElementById('edit-prefs-quick-btn');
+
+    // Preference Summary Elements
+    const summaryChronotype = document.getElementById('summary-chronotype');
+    const summaryStudyStyle = document.getElementById('summary-study-style');
+    const summarySleepWindow = document.getElementById('summary-sleep-window');
+    const summaryGym = document.getElementById('summary-gym');
+
+    function updateCreditCounter() {
+        if (!creditCounterBadge) return;
+        let selectedCredits = 0;
+        const maxCredits = state.studentProfile?.preferences?.max_credits_per_term || 18;
+        state.loadedCourses.forEach(c => {
+            if (state.selectedCourses.has(c.course_id)) {
+                selectedCredits += (c.credits || 0);
+            }
+        });
+        creditCounterBadge.textContent = `${selectedCredits} / ${maxCredits} Credits`;
+    }
+
+    function updatePreferenceSummaryCard(profile) {
+        if (!profile || !profile.preferences) return;
+        const p = profile.preferences;
+        
+        const chronoLabels = {
+            'morning_lark': 'Morning Lark 🌅',
+            'afternoon_peak': 'Afternoon Peak ☀️',
+            'night_owl': 'Night Owl 🦉'
+        };
+        const styleLabels = {
+            'pomodoro': 'Pomodoro ⏱️',
+            'deep_work': 'Deep Work 🧠'
+        };
+
+        if (summaryChronotype) summaryChronotype.textContent = chronoLabels[p.energy_chronotype] || p.energy_chronotype || 'Morning Lark 🌅';
+        if (summaryStudyStyle) summaryStudyStyle.textContent = styleLabels[p.study_session_style] || p.study_session_style || 'Deep Work 🧠';
+        if (summarySleepWindow) summarySleepWindow.textContent = `${p.wake_up_time || '07:00'} – ${p.sleep_time || '23:00'}`;
+        if (summaryGym) {
+            const gymT = (p.gym_time_preference || 'none').toLowerCase();
+            summaryGym.textContent = gymT === 'none' ? 'No Gym' : `${p.gym_time_preference} (${p.gym_duration_minutes || 60}m)`;
+        }
+    }
+
+    function switchSidebarMode(mode) {
+        if (mode === 'courses') {
+            sidebarTabCourses.classList.add('active');
+            sidebarTabLife.classList.remove('active');
+            sidebarPaneCourses.classList.remove('hidden');
+            sidebarPaneLife.classList.add('hidden');
+        } else {
+            sidebarTabLife.classList.add('active');
+            sidebarTabCourses.classList.remove('active');
+            sidebarPaneLife.classList.remove('hidden');
+            sidebarPaneCourses.classList.add('hidden');
+        }
+    }
+
+    sidebarTabCourses.addEventListener('click', () => {
+        switchSidebarMode('courses');
+    });
+
+    sidebarTabLife.addEventListener('click', () => {
+        switchSidebarMode('life');
+    });
+
+    if (editPrefsQuickBtn) {
+        editPrefsQuickBtn.addEventListener('click', () => {
+            populatePrefForm(state.studentProfile);
+            prefModal.classList.remove('hidden');
+        });
+    }
 
     // -------------------------------------------------------------
     // 1. Authentication (admin / admin)
@@ -121,6 +202,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         prefGymDurationInput.value = prefs.gym_duration_minutes || 60;
         prefMaxCreditsInput.value = prefs.max_credits_per_term || 18;
         prefDifficultySelect.value = prefs.difficulty_tolerance || 'medium';
+        prefEnergyChronotypeSelect.value = prefs.energy_chronotype || 'morning_lark';
+        prefStudyStyleSelect.value = prefs.study_session_style || 'deep_work';
+        prefMinGapCommuteInput.value = prefs.min_gap_for_commute_hours ?? 3;
 
         const daysOff = prefs.preferred_days_off || [];
         document.querySelectorAll('input[name="days-off"]').forEach(cb => {
@@ -159,7 +243,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 study_hours_per_day: parseInt(prefStudyHoursInput.value, 10),
                 transit_time_minutes: parseInt(prefTransitMinsInput.value, 10),
                 gym_time_preference: prefGymTimeSelect.value,
-                gym_duration_minutes: parseInt(prefGymDurationInput.value, 10)
+                gym_duration_minutes: parseInt(prefGymDurationInput.value, 10),
+                energy_chronotype: prefEnergyChronotypeSelect.value,
+                study_session_style: prefStudyStyleSelect.value,
+                min_gap_for_commute_hours: parseInt(prefMinGapCommuteInput.value, 10)
             }
         };
 
@@ -170,6 +257,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const saved = await updateStudentProfile(CONFIG.DEFAULT_STUDENT_ID, updatedProfile);
             state.studentProfile = saved;
             studentNameEl.textContent = `Student: ${saved.name}`;
+            updateCreditCounter();
+            updatePreferenceSummaryCard(saved);
             prefStatus.textContent = 'Preferences saved successfully!';
             prefStatus.className = 'pref-status success';
 
@@ -374,6 +463,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             state.selectedCourses.delete(courseId);
         }
+        updateCreditCounter();
         generateBtn.disabled = state.selectedCourses.size === 0;
     });
 
@@ -381,6 +471,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (profile) {
         state.studentProfile = profile;
         studentNameEl.textContent = `Student: ${profile.name}`;
+        updateCreditCounter();
+        updatePreferenceSummaryCard(profile);
     }
 
     generateBtn.addEventListener('click', async () => {

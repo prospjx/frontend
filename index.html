@@ -97,6 +97,29 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="pref-energy-chronotype">🌅 Peak Energy Chronotype</label>
+                        <select id="pref-energy-chronotype" class="form-select">
+                            <option value="morning_lark">Morning Lark 🌅</option>
+                            <option value="afternoon_peak">Afternoon Peak ☀️</option>
+                            <option value="night_owl">Night Owl 🦉</option>
+                        </select>
+                    </div>
+                    <div class="form-group half">
+                        <label for="pref-study-style">🧠 Study Session Style</label>
+                        <select id="pref-study-style" class="form-select">
+                            <option value="pomodoro">Pomodoro (45-60m bursts)</option>
+                            <option value="deep_work">Deep Work (90-120m blocks)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="pref-min-gap-commute">🚗 Min Campus Gap Before Commuting Home (Hours)</label>
+                    <input type="number" id="pref-min-gap-commute" class="form-input" min="1" max="12" value="3" required>
+                </div>
+
                 <div class="form-group">
                     <label>Preferred Days Off (No Classes)</label>
                     <div class="days-checkbox-group">
@@ -126,32 +149,72 @@
                 <h1>Smart Scheduler</h1>
             </div>
 
-            <!-- Upload Schedule Screenshot Box -->
-            <div class="upload-section">
-                <div class="section-title">📷 Upload Schedule Screenshot</div>
+            <!-- Segmented Pill Toggle -->
+            <div class="sidebar-pill-toggle">
+                <button id="sidebar-tab-courses" class="sidebar-tab-btn active" type="button">📚 Course Builder</button>
+                <button id="sidebar-tab-life" class="sidebar-tab-btn" type="button">✨ Life Coach</button>
+            </div>
+
+            <!-- Tab 1: Course Builder Mode -->
+            <div id="sidebar-pane-courses" class="sidebar-pane active">
+                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>Active Courses</span>
+                    <span id="credit-counter-badge" class="badge">0 / 18 Credits</span>
+                </div>
+                
+                <div class="course-list-container">
+                    <div id="course-list" class="course-list">
+                        <!-- Courses injected here -->
+                    </div>
+                </div>
+
+                <div class="sidebar-actions">
+                    <button id="generate-btn" class="primary-btn" disabled>Optimize Course Schedule</button>
+                </div>
+            </div>
+
+            <!-- Tab 2: Life Coach Mode -->
+            <div id="sidebar-pane-life" class="sidebar-pane hidden">
+                <div class="section-title">Upload Schedule Screenshot</div>
                 <div id="dropzone" class="upload-dropzone">
                     <input type="file" id="schedule-file-input" accept="image/png, image/jpeg, image/jpg, image/webp" class="file-input-hidden">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">Click or drag timetable image here</div>
-                    <div class="upload-subtext">PNG, JPG, WEBP</div>
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">Drop timetable image here</div>
+                    <div class="upload-subtext">or click to browse (PNG, JPG)</div>
                 </div>
                 <div id="upload-status" class="upload-status"></div>
-            </div>
 
-            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center;">
-                <span>Active Courses</span>
-                <span id="course-count-badge" class="badge">0</span>
-            </div>
-            
-            <div id="course-list" class="course-list">
-                <!-- Courses injected here -->
-            </div>
+                <!-- Compact Active Preferences Summary Card -->
+                <div class="pref-summary-card">
+                    <div class="pref-summary-header">
+                        <span class="pref-summary-title">⚙️ Active Life Routine</span>
+                        <button type="button" id="edit-prefs-quick-btn" class="text-link-btn">Edit</button>
+                    </div>
+                    <div class="pref-summary-grid">
+                        <div class="pref-summary-item">
+                            <span class="pref-summary-label">Chronotype</span>
+                            <span id="summary-chronotype" class="pref-summary-val">Morning Lark 🌅</span>
+                        </div>
+                        <div class="pref-summary-item">
+                            <span class="pref-summary-label">Study Style</span>
+                            <span id="summary-study-style" class="pref-summary-val">Deep Work 🧠</span>
+                        </div>
+                        <div class="pref-summary-item">
+                            <span class="pref-summary-label">Wake / Sleep</span>
+                            <span id="summary-sleep-window" class="pref-summary-val">07:00 – 23:00</span>
+                        </div>
+                        <div class="pref-summary-item">
+                            <span class="pref-summary-label">Gym Routine</span>
+                            <span id="summary-gym" class="pref-summary-val">Afternoon (60m)</span>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="sidebar-actions">
-                <button id="generate-btn" class="primary-btn" disabled>Optimize Course Schedule</button>
-                <button id="generate-life-btn" class="life-btn" title="Synthesizes full day/week including Study, Transit, Gym, Sleep & Classes">
-                    ✨ Generate Full Routine Plan
-                </button>
+                <div class="sidebar-actions" style="margin-top: auto;">
+                    <button id="generate-life-btn" class="primary-btn" title="Synthesizes full day/week including Study, Transit, Gym, Sleep & Classes">
+                        ✨ Generate Full Routine Plan
+                    </button>
+                </div>
             </div>
         </aside>
 

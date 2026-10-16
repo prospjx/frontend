@@ -8,7 +8,7 @@ function renderCourseList(courses, containerId, onCourseSelect) {
     if (countBadge) countBadge.textContent = courses.length;
 
     if (courses.length === 0) {
-        container.innerHTML = '<div class="empty-state">No courses loaded yet. Select from catalog or upload a schedule screenshot above.</div>';
+        container.innerHTML = '<div class="empty-state">No courses added. Upload a schedule screenshot or select from catalog.</div>';
         return;
     }
 
