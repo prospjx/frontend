@@ -568,85 +568,240 @@ body {
 .legend-dot.sleep { background: #8b5cf6; }
 .legend-dot.meal { background: #ec4899; }
 
-/* Calendar View Area */
+/* ==========================================================================
+   PROPORTIONAL TIME-GRID CALENDAR (06:00 - 24:00)
+   ========================================================================== */
 .schedule-container {
     flex: 1;
     overflow-y: auto;
-    overflow-x: auto;
+    overflow-x: hidden; /* No horizontal scrolling */
     min-height: 0;
-    padding: 16px;
+    padding: 12px 14px 20px 14px;
+    background: var(--bg-surface);
 }
 
 .calendar-grid {
     display: grid;
-    gap: 12px;
-    min-height: min-content;
+    grid-template-columns: 48px repeat(7, minmax(0, 1fr));
     width: 100%;
+    min-width: 0;
+    gap: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    overflow: hidden;
 }
 
+/* Time Axis Column */
+.time-axis-col {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-subtle);
+    background: rgba(17, 23, 38, 0.98);
+}
+
+.time-axis-header {
+    height: 40px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface-elevated);
+}
+
+.time-axis-body {
+    position: relative;
+    height: 1296px; /* 18 hours * 72px/hr (1.2px/min) */
+}
+
+.time-axis-label {
+    position: absolute;
+    right: 6px;
+    transform: translateY(-50%);
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    user-select: none;
+}
+
+/* Day Columns */
 .day-column {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    min-width: 130px;
+    border-right: 1px solid var(--border-subtle);
+    background: transparent;
+    position: relative;
+    min-width: 0;
+}
+
+.day-column:last-child {
+    border-right: none;
 }
 
 .day-header {
-    text-align: center;
-    font-size: 0.8rem;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
     font-weight: 600;
-    padding: 8px 0;
     border-bottom: 1px solid var(--border-subtle);
+    background: var(--bg-surface-elevated);
+    color: var(--text-secondary);
     position: sticky;
     top: 0;
-    background: var(--bg-surface);
-    color: var(--text-secondary);
+    z-index: 20;
+    letter-spacing: 0.02em;
+}
+
+.day-body {
+    position: relative;
+    height: 1296px; /* 18 hours * 72px/hr (1.2px/min) */
+    background-size: 100% 72px;
+    background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Pinned Overnight Sleep Banner at Bottom */
+.sleep-banner {
+    position: absolute;
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    height: 32px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px dashed rgba(139, 92, 246, 0.4);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    color: #c4b5fd;
+    font-weight: 500;
+    z-index: 10;
+}
+
+/* Positioned Event Blocks */
+.scheduled-block, .scheduled-class {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    line-height: 1.25;
+    overflow: hidden;
     z-index: 5;
-    border-radius: var(--radius-sm);
-}
-
-/* Minimalist Schedule Cards */
-.scheduled-class {
-    background: rgba(99, 102, 241, 0.08);
     border-left: 3px solid var(--primary-indigo);
     border-top: 1px solid var(--border-subtle);
     border-right: 1px solid var(--border-subtle);
     border-bottom: 1px solid var(--border-subtle);
-    padding: 10px;
-    border-radius: var(--radius-sm);
-    font-size: 0.8rem;
-    transition: transform 0.15s ease;
+    background: rgba(255, 255, 255, 0.03);
+    transition: transform 0.1s ease, z-index 0.1s ease, box-shadow 0.1s ease;
+    cursor: default;
 }
 
-.scheduled-class:hover {
-    transform: translateY(-1px);
+.scheduled-block:hover, .scheduled-class:hover {
+    transform: scale(1.02);
+    z-index: 15;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-.scheduled-block {
-    padding: 8px 10px;
-    border-radius: var(--radius-sm);
-    font-size: 0.78rem;
-    line-height: 1.3;
-    border-left: 3px solid var(--primary-indigo);
-    background: rgba(255, 255, 255, 0.02);
-    border-top: 1px solid var(--border-subtle);
-    border-right: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
-    transition: transform 0.15s ease;
+/* Compact Micro-blocks (< 30 mins) */
+.block-compact {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    font-size: 11px !important;
+    padding: 2px 5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
-.scheduled-block:hover {
-    transform: translateY(-1px);
+.block-compact .block-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.scheduled-block.class   { border-left-color: var(--primary-indigo); background: rgba(99, 102, 241, 0.08); }
-.scheduled-block.transit { border-left-color: var(--accent-amber);   background: rgba(245, 158, 11, 0.08); }
-.scheduled-block.study   { border-left-color: #38bdf8;               background: rgba(56, 189, 248, 0.08); }
-.scheduled-block.gym     { border-left-color: var(--accent-emerald); background: rgba(16, 185, 129, 0.08); }
-.scheduled-block.wakeup  { border-left-color: var(--accent-rose);    background: rgba(244, 63, 94, 0.08); }
-.scheduled-block.sleep   { border-left-color: #8b5cf6;               background: rgba(139, 92, 246, 0.08); }
-.scheduled-block.meal    { border-left-color: #ec4899;               background: rgba(236, 72, 153, 0.08); }
-.scheduled-block.personal{ border-left-color: var(--text-muted);     background: rgba(255, 255, 255, 0.02); }
+.block-compact .block-time {
+    color: var(--text-muted);
+    font-size: 10px;
+    margin-left: auto;
+}
+
+/* Standard/Large Blocks (>= 30 mins) */
+.block-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 2px;
+}
+
+.block-icon {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.block-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.76rem;
+    line-height: 1.2;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.block-time {
+    font-size: 0.7rem;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+.block-meta {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Activity Category Theme Colors */
+.scheduled-block.class, .scheduled-class {
+    border-left-color: var(--primary-indigo);
+    background: rgba(99, 102, 241, 0.18);
+}
+.scheduled-block.transit {
+    border-left-color: var(--accent-amber);
+    background: rgba(245, 158, 11, 0.16);
+}
+.scheduled-block.study {
+    border-left-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.16);
+}
+.scheduled-block.gym {
+    border-left-color: var(--accent-emerald);
+    background: rgba(16, 185, 129, 0.16);
+}
+.scheduled-block.wakeup {
+    border-left-color: var(--accent-rose);
+    background: rgba(244, 63, 94, 0.16);
+}
+.scheduled-block.sleep {
+    border-left-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.16);
+}
+.scheduled-block.meal {
+    border-left-color: #ec4899;
+    background: rgba(236, 72, 153, 0.16);
+}
+.scheduled-block.personal {
+    border-left-color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+}
 
 /* ==========================================================================
    AI INSIGHTS PANEL (RIGHT SIDE)

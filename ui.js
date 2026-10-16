@@ -32,55 +32,112 @@ function renderCourseList(courses, containerId, onCourseSelect) {
     });
 }
 
+function timeToMinutes(timeStr) {
+    if (!timeStr) return 360;
+    const parts = timeStr.trim().split(':');
+    const h = parseInt(parts[0], 10) || 0;
+    const m = parseInt(parts[1], 10) || 0;
+    return h * 60 + m;
+}
+
+function renderTimeAxisCol() {
+    const col = document.createElement('div');
+    col.className = 'time-axis-col';
+
+    const header = document.createElement('div');
+    header.className = 'time-axis-header';
+    col.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'time-axis-body';
+
+    // 06:00 to 24:00 (18 hours)
+    for (let h = 6; h <= 24; h++) {
+        const label = document.createElement('div');
+        label.className = 'time-axis-label';
+        const topPx = (h - 6) * 72;
+        label.style.top = `${topPx}px`;
+        label.textContent = `${h.toString().padStart(2, '0')}:00`;
+        body.appendChild(label);
+    }
+
+    col.appendChild(body);
+    return col;
+}
+
 function renderCalendar(weeklySchedule, containerId) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
     
+    // Always render 48px time-axis + 7 days Monday - Sunday with no horizontal scroll
+    container.style.gridTemplateColumns = '48px repeat(7, minmax(0, 1fr))';
+    container.style.minWidth = '0';
+
+    // 1. Time axis column
+    container.appendChild(renderTimeAxisCol());
+
+    // 2. Day columns (Monday - Sunday)
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    
-    // Check if any weekend classes exist
-    const hasWeekend = (weeklySchedule['Saturday'] && weeklySchedule['Saturday'].length > 0) ||
-                       (weeklySchedule['Sunday'] && weeklySchedule['Sunday'].length > 0);
-    const activeDays = hasWeekend ? days : days.slice(0, 5);
+    const dayShortNames = {
+        'Monday': 'Mon',
+        'Tuesday': 'Tue',
+        'Wednesday': 'Wed',
+        'Thursday': 'Thu',
+        'Friday': 'Fri',
+        'Saturday': 'Sat',
+        'Sunday': 'Sun'
+    };
 
-    container.style.gridTemplateColumns = `repeat(${activeDays.length}, minmax(130px, 1fr))`;
-    container.style.minWidth = `${activeDays.length * 130}px`;
-
-    activeDays.forEach(day => {
+    days.forEach(day => {
         const col = document.createElement('div');
         col.className = 'day-column';
-        
+
         const header = document.createElement('div');
         header.className = 'day-header';
-        header.textContent = day;
+        header.textContent = dayShortNames[day] || day;
+        header.title = day;
         col.appendChild(header);
-        
+
+        const body = document.createElement('div');
+        body.className = 'day-body';
+
         const classes = weeklySchedule[day] || [];
-        if (classes.length === 0) {
-            const emptyBlock = document.createElement('div');
-            emptyBlock.style.cssText = 'border: 1px dashed rgba(255,255,255,0.08); border-radius: 8px; padding: 20px 8px; text-align: center; color: #64748b; font-size: 0.75rem;';
-            emptyBlock.textContent = 'No classes';
-            col.appendChild(emptyBlock);
-        } else {
-            classes.forEach(cls => {
-                const classBlock = document.createElement('div');
-                classBlock.className = 'scheduled-class';
-                classBlock.innerHTML = `
-                    <div style="font-weight: 700; color: #a5b4fc; font-size: 0.85rem; margin-bottom: 2px;">
-                        🎓 ${cls.course_id}
-                    </div>
-                    ${cls.title ? `<div style="font-size: 0.8rem; color: #f8fafc; font-weight: 500; margin-bottom: 4px; line-height: 1.25;">${cls.title}</div>` : ''}
-                    <div style="font-size: 0.75rem; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
-                        <span style="opacity: 0.8;">🕒</span> ${cls.start_time} - ${cls.end_time}
-                    </div>
-                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 3px; display: flex; align-items: center; gap: 3px;">
-                        <span>📍</span> <span>${cls.location || 'Campus'}</span>
-                    </div>
+        classes.forEach(cls => {
+            const startMins = timeToMinutes(cls.start_time);
+            const endMins = timeToMinutes(cls.end_time);
+
+            // Scale: 1.2px per minute, base 06:00 (360 mins)
+            const topPx = Math.max(0, (startMins - 360) * 1.2);
+            const durationMins = Math.max(15, endMins - startMins);
+            const heightPx = Math.max(22, durationMins * 1.2);
+
+            const block = document.createElement('div');
+            block.className = 'scheduled-class';
+            block.style.top = `${topPx}px`;
+            block.style.height = `${heightPx}px`;
+
+            if (durationMins < 30) {
+                block.classList.add('block-compact');
+                block.innerHTML = `
+                    <span>🎓</span>
+                    <span class="block-title">${cls.course_id}</span>
+                    <span class="block-time">${cls.start_time}</span>
                 `;
-                col.appendChild(classBlock);
-            });
-        }
-        
+            } else {
+                block.innerHTML = `
+                    <div class="block-header">
+                        <span class="block-icon">🎓</span>
+                        <div class="block-title">${cls.course_id} ${cls.title ? `— ${cls.title}` : ''}</div>
+                    </div>
+                    <div class="block-time">${cls.start_time} - ${cls.end_time}</div>
+                    ${cls.location && heightPx > 50 ? `<div class="block-meta">📍 ${cls.location}</div>` : ''}
+                `;
+            }
+
+            body.appendChild(block);
+        });
+
+        col.appendChild(body);
         container.appendChild(col);
     });
 }
@@ -89,9 +146,23 @@ function renderFullRoutineCalendar(weeklyRoutine, containerId) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
     
+    // Always render 48px time-axis + 7 days Monday - Sunday with no horizontal scroll
+    container.style.gridTemplateColumns = '48px repeat(7, minmax(0, 1fr))';
+    container.style.minWidth = '0';
+
+    // 1. Time axis column
+    container.appendChild(renderTimeAxisCol());
+
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    container.style.gridTemplateColumns = `repeat(7, minmax(140px, 1fr))`;
-    container.style.minWidth = `980px`;
+    const dayShortNames = {
+        'Monday': 'Mon',
+        'Tuesday': 'Tue',
+        'Wednesday': 'Wed',
+        'Thursday': 'Thu',
+        'Friday': 'Fri',
+        'Saturday': 'Sat',
+        'Sunday': 'Sun'
+    };
 
     const typeIcons = {
         'Class': '🎓',
@@ -107,34 +178,74 @@ function renderFullRoutineCalendar(weeklyRoutine, containerId) {
     days.forEach(day => {
         const col = document.createElement('div');
         col.className = 'day-column';
-        
+
         const header = document.createElement('div');
         header.className = 'day-header';
-        header.textContent = day;
+        header.textContent = dayShortNames[day] || day;
+        header.title = day;
         col.appendChild(header);
-        
+
+        const body = document.createElement('div');
+        body.className = 'day-body';
+
         const activities = weeklyRoutine[day] || [];
+        let overnightSleepBlock = null;
+
         activities.forEach(act => {
-            const block = document.createElement('div');
             const typeKey = (act.activity_type || 'Personal').toLowerCase();
+            const startMins = timeToMinutes(act.start_time);
+            const endMins = timeToMinutes(act.end_time);
+
+            // Collapse overnight sleep (e.g. 23:00 - 07:00 or starting >= 22:00 / sleep type)
+            if (typeKey === 'sleep' || (startMins >= 1320 && endMins <= 480)) {
+                overnightSleepBlock = act;
+                return; // Pin into bottom banner instead of taking 8 hours of grid space
+            }
+
+            // Proportional vertical positioning (base 06:00 = 360 mins, 1.2px/min)
+            const topPx = Math.max(0, (startMins - 360) * 1.2);
+            const durationMins = Math.max(10, endMins - startMins);
+            const heightPx = Math.max(22, durationMins * 1.2);
+
+            const block = document.createElement('div');
             block.className = `scheduled-block ${typeKey}`;
-            
+            block.style.top = `${topPx}px`;
+            block.style.height = `${heightPx}px`;
+
             const icon = typeIcons[act.activity_type] || '📌';
 
-            block.innerHTML = `
-                <div style="font-weight: 600; display:flex; align-items:flex-start; gap:6px; margin-bottom:4px; font-size:0.82rem; color:#f8fafc;">
-                    <span style="font-size:1rem; flex-shrink:0;">${icon}</span>
-                    <span style="word-break:normal; overflow-wrap:anywhere; line-height:1.25;">${act.title || act.activity_type}</span>
-                </div>
-                <div style="font-size:0.75rem; color:#cbd5e1; font-weight:500; display:flex; align-items:center; gap:4px; margin-bottom:2px;">
-                    <span style="opacity:0.75;">🕒</span> ${act.start_time} - ${act.end_time}
-                </div>
-                ${act.location ? `<div style="font-size:0.72rem; color:#94a3b8; margin-top:2px; display:flex; align-items:center; gap:3px;"><span>📍</span><span>${act.location}</span></div>` : ''}
-                ${act.description ? `<div style="font-size:0.72rem; color:#94a3b8; margin-top:3px; line-height:1.25; font-style:italic;">${act.description}</div>` : ''}
-            `;
-            col.appendChild(block);
+            // Micro-blocks (< 30 mins)
+            if (durationMins < 30) {
+                block.classList.add('block-compact');
+                block.innerHTML = `
+                    <span>${icon}</span>
+                    <span class="block-title">${act.title || act.activity_type}</span>
+                    <span class="block-time">${act.start_time}</span>
+                `;
+            } else {
+                // Standard/Large blocks (>= 30 mins)
+                block.innerHTML = `
+                    <div class="block-header">
+                        <span class="block-icon">${icon}</span>
+                        <div class="block-title">${act.title || act.activity_type}</div>
+                    </div>
+                    <div class="block-time">${act.start_time} - ${act.end_time}</div>
+                    ${act.location && heightPx > 45 ? `<div class="block-meta">📍 ${act.location}</div>` : ''}
+                `;
+            }
+
+            body.appendChild(block);
         });
-        
+
+        // Add pinned overnight sleep banner at the bottom of the day column
+        if (overnightSleepBlock) {
+            const sleepBanner = document.createElement('div');
+            sleepBanner.className = 'sleep-banner';
+            sleepBanner.innerHTML = `<span>🌙 Sleep</span> <span>${overnightSleepBlock.start_time} - ${overnightSleepBlock.end_time}</span>`;
+            body.appendChild(sleepBanner);
+        }
+
+        col.appendChild(body);
         container.appendChild(col);
     });
 }
