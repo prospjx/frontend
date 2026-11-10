@@ -2,8 +2,8 @@
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const isCloudFront = window.location.hostname.includes('cloudfront.net');
 
-// Set your live deployed backend URL here when you deploy on Render/Railway (e.g. "https://scs-backend.onrender.com")
-const REMOTE_BACKEND_URL = window.SCS_BACKEND_URL || "https://your-backend-service.onrender.com";
+// Live deployed Render API Gateway URL
+const REMOTE_BACKEND_URL = window.SCS_BACKEND_URL || "https://scsrepository.onrender.com";
 
 const getBaseUrl = (port) => {
     if (isLocal) {
@@ -12,7 +12,7 @@ const getBaseUrl = (port) => {
     if (isCloudFront) {
         return '/api/v1';
     }
-    // Hosted on GitHub Pages / Vercel: All calls go to the unified backend
+    // Hosted on GitHub Pages / Vercel: All calls route through the Render Gateway
     return `${REMOTE_BACKEND_URL}/api/v1`;
 };
 
