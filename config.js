@@ -1,16 +1,27 @@
 // Configuration for the Frontend Application
-// In a real deployment on EKS, you would swap these out for your Ingress controller URLs (e.g., https://api.yoursite.com/courses)
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const isCloudFront = window.location.hostname.includes('cloudfront.net');
-const API_HOST = window.location.hostname || 'localhost';
 
-const CONFIG = {
-    // If loaded on CloudFront, route through the unified CloudFront origin (/api/v1)
-    COURSE_API_URL: isCloudFront ? '/api/v1' : `http://${API_HOST}:8001/api/v1`,
-    STUDENT_API_URL: isCloudFront ? '/api/v1' : `http://${API_HOST}:8002/api/v1`,
-    SCHEDULER_API_URL: isCloudFront ? '/api/v1' : `http://${API_HOST}:8000/api/v1`,
-    AI_ASSISTANT_API_URL: isCloudFront ? '/api/v1' : `http://${API_HOST}:8003/api/v1`,
-    
-    // The hardcoded mock student ID we created in the studentapi seed script
-    DEFAULT_STUDENT_ID: '123e4567-e89b-12d3-a456-426614174000'
+// Set your live deployed backend URL here when you deploy on Render/Railway (e.g. "https://scs-backend.onrender.com")
+const REMOTE_BACKEND_URL = window.SCS_BACKEND_URL || "https://your-backend-service.onrender.com";
+
+const getBaseUrl = (port) => {
+    if (isLocal) {
+        return `http://127.0.0.1:${port}/api/v1`;
+    }
+    if (isCloudFront) {
+        return '/api/v1';
+    }
+    // Hosted on GitHub Pages / Vercel: All calls go to the unified backend
+    return `${REMOTE_BACKEND_URL}/api/v1`;
 };
 
+const CONFIG = {
+    COURSE_API_URL: getBaseUrl(8001),
+    STUDENT_API_URL: getBaseUrl(8002),
+    SCHEDULER_API_URL: getBaseUrl(8000),
+    AI_ASSISTANT_API_URL: getBaseUrl(8003),
+    
+    // Default mock student ID
+    DEFAULT_STUDENT_ID: '123e4567-e89b-12d3-a456-426614174000'
+};
