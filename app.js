@@ -682,6 +682,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             generateLifeBtn.disabled = true;
         }
 
+        // Immediately switch calendar view toggle to Full Day Routine while synthesizing
+        state.currentView = 'routine';
+        viewRoutineBtn.classList.add('active');
+        viewClassesBtn.classList.remove('active');
+        calendarViewTitle.textContent = "Weekly Life & Routine Plan";
+
         document.getElementById('calendar-grid').innerHTML = '<div class="loading">Synthesizing full 24/7 weekly routine (Classes + Transit + Study + Gym + Sleep) via AI...</div>';
 
         try {
