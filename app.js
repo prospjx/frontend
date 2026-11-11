@@ -416,6 +416,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
 
             state.lastWeeklySchedule = extractedWeekly;
+            // Clear any prior routine plan so full-day routine stays clean until synthesized
+            state.lastWeeklyRoutine = {};
+
+            // Automatically switch toggle to "Classes Only" view mode
+            state.currentView = 'classes';
+            viewClassesBtn.classList.add('active');
+            viewRoutineBtn.classList.remove('active');
+            calendarViewTitle.textContent = "Academic Classes Only";
             renderCalendar(extractedWeekly, 'calendar-grid');
 
             // Render extracted classes into Step 2 list
@@ -757,7 +765,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (Object.keys(state.lastWeeklyRoutine).length > 0) {
             renderFullRoutineCalendar(state.lastWeeklyRoutine, 'calendar-grid');
         } else {
-            document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Upload a timetable screenshot on the left to generate your 24/7 AI schedule.</div>';
+            document.getElementById('calendar-grid').innerHTML = '<div class="empty-state">Complete the AI Coach check-in questions on the right to synthesize your full-day routine (Classes + Transit + Study + Gym + Sleep).</div>';
         }
     });
 
