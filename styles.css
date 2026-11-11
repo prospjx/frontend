@@ -299,7 +299,7 @@ body {
 .sidebar-workflow {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     flex: 1;
     min-height: 0;
     overflow-y: auto;
@@ -387,12 +387,16 @@ body {
     font-weight: 500;
 }
 
+.file-input-hidden {
+    display: none;
+}
+
 /* Simplified Upload Dropzone */
 .upload-dropzone {
     border: 1.5px dashed var(--border-subtle);
     background: var(--bg-surface-elevated);
     border-radius: var(--radius-md);
-    padding: 18px 12px;
+    padding: 16px 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -424,7 +428,10 @@ body {
     font-size: 0.78rem;
     margin-top: 6px;
     text-align: center;
-    min-height: 18px;
+}
+
+.upload-status:empty {
+    display: none;
 }
 
 .upload-status.loading { color: var(--accent-amber); }
